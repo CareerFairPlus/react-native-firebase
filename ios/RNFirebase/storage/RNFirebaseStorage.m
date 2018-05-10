@@ -276,7 +276,18 @@ RCT_EXPORT_METHOD(putFile:(NSString *) appDisplayName
         }
     } else {
         // TODO: Content type for file?
-        NSData *data = [[NSFileManager defaultManager] contentsAtPath:localPath];
+        NSString *localFilePath;
+        // If file starts with slash "/", that means it's on the local file system, but it's in "file://" URL format
+        // and may be URL encoded (aka "percent encoding" in iOS land).  This URL encoding needs to be converted back to
+        // regular characters for NSFileManager to be able to find the file.
+        if ([localPath hasPrefix:@"/"]) {
+            localFilePath = [localPath stringByRemovingPercentEncoding];
+        } else {
+            // Leave localPath alone in this case since this is the same default case that was there previously.
+            localFilePath = [localPath copy];
+        }
+
+        NSData *data = [[NSFileManager defaultManager] contentsAtPath:localFilePath];
         [self uploadData:appDisplayName data:data firmetadata:firmetadata path:path resolver:resolve rejecter:reject];
     }
 
